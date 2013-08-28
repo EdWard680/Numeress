@@ -1,1 +1,2 @@
-g++ -std=c++11 main.cpp graphicsDM.cpp graphicsGL.cpp board.cpp cell.cpp piece.cpp -o NumeressBeta -g -I../GameFramework -L../GameFramework -lGameFrame
+rm NumeressBeta
+g++-4.7 -std=c++11 main.cpp graphicsDM.cpp graphicsGL.cpp board.cpp cell.cpp piece.cpp -o NumeressBeta -g -I../GameFramework -L../GameFramework -lGameFrame

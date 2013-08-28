@@ -46,4 +46,3 @@ GameLoop * const NumeressDM::firstGameLoop(App * parent)
     currentGL = new Numeress(this, parent);
   return currentGL;
 }
-

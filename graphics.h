@@ -51,6 +51,8 @@ protected:
 			      const bool lDown, const bool rDown, const bool mDown) {return EVENT_SUCCESS;};
   const EVENT_RESULT mouseButtonPressed(const Uint8 button, const int mX, const int mY);
   const EVENT_RESULT resized(const int W, const int H);
+  const EVENT_RESULT keyPressed(const SDLKey sym, const SDLMod mod, const Uint16 unicode);
+  
 public:
   Numeress(NumeressDM * const dataM, GameLoop * const parent): GameLoop(dataM, parent) {
     MyDM = dataM;

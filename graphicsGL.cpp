@@ -22,6 +22,7 @@ const int Numeress::loop()
   if(MyDM->board.won() != NULL)
   {
     Running = false;
+    cout<<"Side "<<(int)MyDM->board.won()->getSide()<<" won"<<endl;
     return 1;
   }
   MyDM->available.reset();
@@ -75,7 +76,7 @@ const int Numeress::render() const
     Uint8 j;
     for(start.x(100), j=i; i < j + MyDM->board.getDim().x(); i++, start.x()+=MyDM->tiles[0]->w)
     {
-      MyDM->tiles[MyDM->available[i]? 4:(((first + i)->getSide() << 1) | (first + 1)->getType())].draw(MyDM->Display, start);
+      MyDM->tiles[MyDM->available[i]? 4:(((first + i)->getSide() << 1) | (first + i)->getType())].draw(MyDM->Display, start);
       Piece *p = (first + i)->getPiece();
       if(p)
       {
@@ -155,4 +156,19 @@ const EVENT_RESULT Numeress::resized(const int W, const int H)
 {
   MyDM->Display = SDL_SetVideoMode(W, H, 32, SDL_DOUBLEBUF | SDL_HWSURFACE);
   return EVENT_SUCCESS;
+}
+
+const EVENT_RESULT Numeress::keyPressed(const SDLKey sym, const SDLMod mod, const Uint16 unicode)
+{
+  switch(sym)
+  {
+  case SDLK_ESCAPE:
+    resized(MyDM->Display->w, MyDM->Display->h);
+    break;
+  case SDLK_q:
+    exited();
+    break;
+  default:
+    break;
+  }
 }
