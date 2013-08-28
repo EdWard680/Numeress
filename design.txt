@@ -1,0 +1,27 @@
+class board
+  dimensions
+  Cell *cells  //allocated with width*length
+  Piece **pieces //allocated with number of pieces
+  Piece **flags  //allocated with number of sides
+  move(Piece*, Cell*)  //moves piece to cell if it is a valid move; returns validity of move
+  handOff(Piece*, Piece*)  //hands off flag from piece to piece; returns validity of move
+  getCell(Point)  //returns reference to cell at Point
+  getCell(Piece*)  //returns reference to cell that Piece is at
+  getPoint(Cell*)  //returns point of Cell
+  getValid(Piece*)  //returns vector of valid cells Piece can move
+  
+class Cell
+  const type  //endzone or neutral from either side
+  //*piece //points to piece which rests on it (null if none)
+  
+class Piece
+  const int value  //strength
+  const side   //allegiance
+  bool flag    //whether it holds the flag
+  int out  //number of turns for which it is out
+  *cell  //cell on which it currently sits
+  vector<Point> valid //vector of relative points to which it can move loaded by load
+  const string getFileName()  //returns the file name using a format defined in the function
+  const vector<Point> getValid()  //returns the vector of valid relative points using the file `getFileName()`
+  
+  
