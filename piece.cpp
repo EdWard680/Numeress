@@ -3,8 +3,9 @@
 
 Cell * const Piece::setCell(Cell * const c)
 {
-  location != NULL? (location->setPiece(NULL)):(NULL);
+  (location != NULL && init)? (location->setPiece(NULL)):(NULL);
   c != NULL? (c->setPiece(this)):(NULL);
+  init = true;
   return location = c;
 }
 
@@ -44,16 +45,31 @@ strength(sgt),
 side(sd),
 location(initLoc),
 flag(-1),
-out(0)
+out(0),
+init(initLoc != NULL)
 {
   generateValid();
 }
 
+Piece::Piece(const Piece& other):
+strength(other.strength), side(other.side), flag(other.flag), out(other.out), location(other.location), valid(other.valid), init(false)
+{
+}
+
+/*
 Piece& Piece::operator= (const Piece& p)
 {
-  new (this) Piece(p.getStrength(), getSide(), NULL);
+  swap(this->strength, copy.strength);
+  swap(this->side, copy.side);
+  swap(this->flag, copy.flag);
+  swap(this->out, copy.out);
+  swap(this->location, copy.location);
+  swap(this->valid, copy.valid);
+  //new (this) Piece(p.getStrength(), getSide(), NULL);
+  //ugh stupid poor design
   return *this;
 }
+*/
 
 vector<Piece> Piece::generatePieces(const SIDE_t side, const Uint8 pieces=5)
 {

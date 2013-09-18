@@ -3,7 +3,6 @@
 const int NumeressDM::init()
 {
   playingIn = false;
-  turn = 0;
   select = NULL;
   if(background.load("sprites/background.jpg") < 0)
     return -1;

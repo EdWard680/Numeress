@@ -13,7 +13,7 @@ private:
   static int prev;
   
 private:
-  const int type;
+  int type;
   Piece *piece;  
   
 public:
@@ -25,8 +25,8 @@ public:
   
 public:
   Cell(const Uint8 t=false, const int s=-1);
-  Cell(const Cell &cp): type(cp.type) {};
-  Cell& operator= (const Cell& c);
+  Cell(const Cell &cp): type(cp.type), piece(NULL) {};
+  //Cell& operator= (const Cell& c);
 };
 
 

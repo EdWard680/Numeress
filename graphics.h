@@ -23,9 +23,7 @@ public:
   Piece *select;
   bool playingIn;
   SafeSurf background;
-  Board board;
-  
-  Uint8 turn;  
+  Board board; 
   
 public:
   NumeressDM() {currentGL = NULL;};

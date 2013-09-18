@@ -1,0 +1,2 @@
+rm TestPermute
+g++-4.7 -std=c++11 permute.cpp board.cpp cell.cpp piece.cpp -o TestPermute -g -I../GameFramework -L../GameFramework -lGameFrame

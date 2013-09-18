@@ -29,7 +29,7 @@ const int Numeress::loop()
   Cell *first = MyDM->board.getCell(Point(0, 0));
   if(MyDM->playingIn)
   {
-    if((MyDM->select = MyDM->board.nextIn(MyDM->turn % MyDM->board.getSides())) == NULL)
+    if((MyDM->select = MyDM->board.nextIn(MyDM->board.whosTurn())) == NULL)
       MyDM->playingIn = false;
   }
   
@@ -37,22 +37,10 @@ const int Numeress::loop()
   {
     for(Uint8 i = 0; i < MyDM->board.getNumPieces(); i++)
     {
-      Cell *pieceLoc = MyDM->board.getPiece(i+1, MyDM->turn % MyDM->board.getSides())->getCell();
+      Cell *pieceLoc = MyDM->board.getPiece(i+1, MyDM->board.whosTurn())->getCell();
       if(pieceLoc == NULL)
 	continue;
       MyDM->available[pieceLoc - first] = 1;
-    }
-  }
-  else if(MyDM->playingIn)
-  {
-    for(Uint8 i = 0; i < MyDM->available.size(); i++)
-    {
-      if((first + i)->getSide() == MyDM->turn % MyDM->board.getSides() && 
-	(first + i)->getType() == Cell::CAP_ZONE &&
-	(first + i)->getPiece() == NULL)
-      {
-	MyDM->available[i] = 1;
-      }
     }
   }
   else
@@ -89,7 +77,7 @@ const int Numeress::render() const
     }
   }
   
-  MyDM->tiles[((MyDM->turn % MyDM->board.getSides()) << 1) | 1].draw(MyDM->Display, Point(MyDM->Display->w - 200, 100));
+  MyDM->tiles[((MyDM->board.whosTurn()) << 1) | 1].draw(MyDM->Display, Point(MyDM->Display->w - 200, 100));
   if(MyDM->select)
     MyDM->pieceSprites[MyDM->select->getSide()][MyDM->select->getValue() - 1].draw(MyDM->Display, Point(MyDM->Display->w - 200, 100));
   
@@ -134,7 +122,6 @@ const EVENT_RESULT Numeress::mouseButtonPressed(const Uint8 button, const int mX
       {
         MyDM->board.move(MyDM->select, selectedCell);
         MyDM->playingIn = true;
-        MyDM->turn++;
       }
     }
     else if(selectedCell->getPiece() != NULL)
@@ -154,7 +141,7 @@ const EVENT_RESULT Numeress::mouseButtonPressed(const Uint8 button, const int mX
 
 const EVENT_RESULT Numeress::resized(const int W, const int H)
 {
-  MyDM->Display = SDL_SetVideoMode(W, H, 32, SDL_DOUBLEBUF | SDL_HWSURFACE);
+  MyDM->Display = SDL_SetVideoMode(W, H, 32, SDL_DOUBLEBUF | SDL_HWSURFACE | SDL_RESIZABLE);
   return EVENT_SUCCESS;
 }
 

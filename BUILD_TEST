@@ -1,0 +1,2 @@
+rm TestEval
+g++-4.7 -std=c++11 testBoardEval.cpp AI.cpp board.cpp cell.cpp piece.cpp -o TestEval -g -I../GameFramework -L../GameFramework -lGameFrame

@@ -9,8 +9,9 @@ public:
   static vector<Piece> generatePieces(const SIDE_t s, const Uint8 pieces);
   
 private:
-  const Uint8 strength;  // Piece value.
-  const SIDE_t side;     // Side piece belongs.
+  Uint8 strength;  // Piece value.
+  bool init;
+  SIDE_t side;     // Side piece belongs.
   int flag;   // Whether it has the flag or not.
   Uint8 out;  // Number of turns it must remains out of play.
   Cell *location;  // Pointer to cell it rests on.
@@ -33,7 +34,8 @@ public:
   
 public:
   Piece(const Uint8 sgt, const SIDE_t sd, Cell * const initLoc);
-  Piece& operator=(const Piece& p);
+  Piece(const Piece& other);
+ // Piece& operator=(const Piece& p);
 };
 
 

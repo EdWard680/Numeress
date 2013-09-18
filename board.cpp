@@ -1,9 +1,27 @@
 #include "board.h"
 
+const char * const Board::toString() const
+{
+#if DEBUG
+  for(Uint8 y = 0; y < 10; y++)
+  {
+    for(Uint8 x = 0; x < 10; x++)
+    {
+      boardString[y][x*2] = (cells[y*10 + x].getPiece() == NULL? '-':('0' + cells[y*10 + x].getPiece()->getStrength()));
+      boardString[y][x*2 + 1] = ' ';
+    }
+    boardString[y][19] = NULL;
+  }
+  return &boardString[0][0];
+#endif
+}
+
+
 const bool Board::move(Piece * const src, Cell * const dest)
 {
-  if(!src || !dest || !src->getCell())
+  if(!src || !dest || !src->getCell() || !cellHere(dest))
     return false;
+  
   
   if(canHandOff(src, dest))
   {
@@ -49,7 +67,7 @@ const bool Board::move(Piece * const src, Cell * const dest)
   
   if(dest->getType() == Cell::CAP_ZONE && dest->getSide() != src->getSide() &&
     flags[dest->getSide()] == NULL && src->hasFlag()<0)
-  {	
+  {
     flags[dest->getSide()] = src;
     src->hasFlag(dest->getSide());
   }
@@ -66,12 +84,14 @@ const bool Board::move(Piece * const src, Cell * const dest)
       (*i)->turn();
   }
   
-  return true;  
+  turn++;
+  moved(src, dest);
+  return true;
 }
 
 const bool Board::canAttack(Piece * const p, Cell * const c) const
 {
-  if(p == NULL || c == NULL)
+  if(p == NULL || c == NULL || !cellHere(c))
     return false;
   
   if(c->getPiece() == NULL)
@@ -94,7 +114,7 @@ const bool Board::canAttack(Piece * const p, Cell * const c) const
 
 const bool Board::canHandOff(Piece * const p, Cell * const c) const
 {
-  if(p == NULL || c == NULL)
+  if(p == NULL || c == NULL || !cellHere(c))
     return false;
   
   if(c->getPiece() == NULL)
@@ -115,7 +135,7 @@ const bool Board::canHandOff(Piece * const p, Cell * const c) const
 
 Piece * const Board::playIn(Piece * const p=NULL, Cell * const loc=NULL)
 {
-  if(p == NULL || loc == NULL)
+  if(p == NULL || loc == NULL || !cellHere(loc))
     return NULL;
   
   if(loc->getType() != Cell::CAP_ZONE || loc->getSide() != p->getSide())
@@ -131,6 +151,8 @@ Piece * const Board::playIn(Piece * const p=NULL, Cell * const loc=NULL)
   
   out.erase(remove(out.begin(), out.end(), p), out.end());  
   
+  playedIn(p, loc);
+  
   return nextIn(p->getSide());
 }
 
@@ -143,6 +165,7 @@ Piece * const Board::nextIn(const SIDE_t s) const
     return NULL;
   else
     return *rtrn;
+  
 }
 
 
@@ -166,15 +189,18 @@ const bool Board::handOff(Piece * const p1, Piece * const p2)
   
   flags[p2->hasFlag()] = p2;  
   
+  handedOff(p1, p2);
+  
   return true;
 }
 
 
-void Board::ejectPiece(Piece * const p, const Uint8 o)
+int Board::ejectPiece(Piece * const p, const Uint8 o)
 {
+  if(p == NULL)
+    return -1;
   p->setOut(o);
   out.push_back(p);
-  p->getCell()->setPiece(NULL);
   p->setCell(NULL);
   if(p->hasFlag() >= 0)
   {
@@ -191,16 +217,19 @@ void Board::ejectPiece(Piece * const p, const Uint8 o)
 	  i->getCell()->getSide() == p->hasFlag())
         {
           i->hasFlag(p->hasFlag());
-          flags[p->hasFlag()] = &*i;
+          flags[p->hasFlag()] = &(*i);
 	  break;
         }
       }
-      if(flags[p->getSide()] != NULL)
+      if(flags[p->hasFlag()] != NULL)
 	break;
     }
     p->hasFlag(-1);
   }
   
+  ejectedPiece(p, o);
+  
+  return 0;
 }
 
 Cell * const Board::getCell(const Point &p) const
@@ -224,23 +253,34 @@ const Point Board::getPoint(Cell * const c) const
   return Point((c - cells)%int(dimensions.x()), (c - cells) / int(dimensions.x()));
 }
 
-const vector<Cell *> Board::getValid(Cell * const c) const
+const vector<Cell *> Board::getValid(Piece * const p) const
 {
-  if(c->getPiece() == NULL)
+  if(p == NULL)
     return vector<Cell *>(1, NULL);
-  vector<Point> relative = c->getPiece()->getValid();
+  else if(p->getOut() == 0 && p->getCell() == NULL)
+  {
+    vector<Cell *> rtrn;
+    for(Uint8 i = 0; i < dimensions.x().val * dimensions.y().val; i++)
+    {
+      if(cells[i].getType() == Cell::CAP_ZONE && cells[i].getSide() == p->getSide() && cells[i].getPiece() == NULL)
+	rtrn.push_back(cells + i);
+    }
+    
+    return rtrn;
+  }
+  vector<Point> relative = p->getValid();
   vector<Cell *> rtrn;
   Cell *temp;
   Point pTemp;
-  for(vector<Point>::iterator i=relative.begin(); i < relative.end(); i++)
+  for(vector<Point>::iterator i=relative.begin(); i != relative.end(); i++)
   {
-    if((pTemp = getPoint(c)).x() < -0.1)
+    if((pTemp = getPoint(p->getCell())).x() < -0.1)
       continue;
     if((temp = getCell(*i + pTemp)) == NULL)
       continue;
     if(temp->getPiece() != NULL)
     {
-      if(!canAttack(c->getPiece(), temp) && !canHandOff(c->getPiece(), temp))
+      if(!canAttack(p, temp) && !canHandOff(p, temp))
         continue;
     }
     rtrn.push_back(temp);
@@ -249,14 +289,65 @@ const vector<Cell *> Board::getValid(Cell * const c) const
   return rtrn;
 }
 
-const vector<Cell *> Board::getValid(Piece * const p) const
+const vector<Cell *> Board::getValid(Cell * const c) const
 {
-  return getValid(p->getCell());
+  if(c == NULL || !cellHere(c))
+    return vector<Cell *>(1, NULL);
+  return getValid(c->getPiece());
+}
+
+Board::Board(const Board& other): 
+dimensions(other.dimensions), sides(other.sides), nPieces(other.nPieces), turn(other.turn), winner(other.winner)
+{
+  cells = new Cell [int(dimensions.x().val * dimensions.y().val)];
+  memcpy(cells, other.cells, sizeof(Cell) * int(dimensions.x().val*dimensions.y().val));
+  for(Uint8 c = 0; c < dimensions.x().val * dimensions.y().val; c++)
+    cells[c].setPiece(NULL);
+  pieces = new vector<Piece> [sides];
+  flags = new Piece* [sides];
+  for(SIDE_t s = 0; s < sides; s++)
+  {
+    pieces[s].reserve(other.pieces[s].size());
+    pieces[s] = other.pieces[s];
+    for(Uint8 p = 0; p < pieces[s].size(); p++)
+    {
+      if(other.pieces[s][p].getCell() != NULL)
+	pieces[s][p].setCell(cells + (other.pieces[s][p].getCell() - other.cells));
+      
+      if(pieces[s][p].getCell() == NULL)
+	out.push_back(&pieces[s][p]);
+    }
+  }
+  
+  for(Uint8 s = 0; s < sides; s++)
+  {
+    if(other.flags[s] != NULL)
+      flags[s] = getPiece(other.flags[s]->getValue(), other.flags[s]->getSide());
+    else
+      flags[s] = NULL;
+  }
+  
+  if(other.winner != NULL)
+    winner = getPiece(other.winner->getValue(), other.winner->getSide());
+  
+  toString();
+}
+
+Board &Board::operator= (Board other)
+{
+  swap(this->winner, other.winner);
+  swap(this->cells, other.cells);
+  swap(this->pieces, other.pieces);
+  swap(this->flags, other.flags);
+  swap(this->out, other.out);
+  swap(this->turn, other.turn);
+  toString();
+  return *this;
 }
 
 Board::Board(const Dimensions d, const SIDE_t nSides, 
 	     const Uint8 nP, Cell * const c, vector<Piece> * const p):
-	     dimensions(d), sides(nSides), nPieces(nP), cells(c), pieces(p), winner(NULL)
+	     dimensions(d), sides(nSides), nPieces(nP), cells(c), pieces(p), winner(NULL), turn(0)
 {
   if(cells == NULL && nSides == 2)
     cells = Cell::generateDefaultCells(dimensions);
@@ -286,6 +377,8 @@ Board::Board(const Dimensions d, const SIDE_t nSides,
       out.push_back(&*j);
     }
   }
+  
+  toString();
 }
 
 Board::~Board()

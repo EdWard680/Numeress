@@ -12,13 +12,17 @@ Piece * const Cell::setPiece(Piece * const p)
 {
   return piece = p;
 }
-
+/*
 Cell& Cell::operator= (const Cell& c)
 {
-  new (this) Cell(c.getType(), c.getSide());
+  Cell copy(c);
+  swap(this->type, copy.type);
+  swap(this->piece, copy.piece);
+  //new (this) Cell(c.getType(), c.getSide());
+  //Apparently this is not "exception safe". Lol whatever that means
   return *this;
 }
-
+*/
 Cell * const Cell::generateDefaultCells(Dimensions d)
 {
   Cell * const rtrn = new Cell [(int)d.x().val * (int)d.y().val];
