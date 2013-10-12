@@ -6,7 +6,7 @@
 class Piece
 {
 public:
-  static vector<Piece> generatePieces(const SIDE_t s, const Uint8 pieces);
+  static vector<Piece> generatePieces(const SIDE_t s, const Uint8 pieces=5);
   
 private:
   Uint8 strength;  // Piece value.

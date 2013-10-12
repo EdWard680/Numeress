@@ -3,7 +3,7 @@
 
 #include "boardTree.h"
 
-
+/*
 struct Node
 {
   Board b;
@@ -22,11 +22,11 @@ struct ABNode
   EXPECTED_VALUE alpha;
   EXPECTED_VALUE beta;
 };
-
+*/
 
 class AI
 {
-  const Board * board;
+  Board *game;
   const SIDE_t side;
   
 public:
@@ -34,20 +34,15 @@ public:
   const EXPECTED_VALUE quiEvaluate(const Board &b) {return b.whosTurn() == side? (evaluate(b)):(-evaluate(b));};
   const SIDE_t getSide() const {return side;};
 private:
-  const EXPECTED_VALUE findBestMove(Node &n);  //uses werid average thing I developed
-  const EXPECTED_VALUE quiesce(ABNode &n);
-  const EXPECTED_VALUE alphaBeta(ABNode &n);
+  //const EXPECTED_VALUE findBestMove(BoardNode &n);  //uses werid average thing I developed
+  //const EXPECTED_VALUE quiesce(BoardNode &n);
+  const SEARCH_RETURN alphaBeta(Board &board, const EXPECTED_VALUE alpha, const EXPECTED_VALUE beta, const int depth);
   
 public:
-  const ABNode getBestMove(const Uint8 depth);
+  const Move getBestMove(const int depth);
   
 public:
-  AI(const Board * const b, const SIDE_t s): side(s), board(b) {};
+  AI(Board * const b, const SIDE_t s): side(s), game(b) {};
 };
-
-
-
-
-
 
 #endif

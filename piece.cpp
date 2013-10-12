@@ -43,11 +43,12 @@ const Uint8 Piece::getStrength() const
 Piece::Piece(const SIDE_t sd, const Uint8 sgt, Cell * const initLoc): 
 strength(sgt), 
 side(sd),
-location(initLoc),
+location(NULL),
 flag(-1),
 out(0),
 init(initLoc != NULL)
 {
+  setCell(initLoc);
   generateValid();
 }
 
@@ -71,7 +72,7 @@ Piece& Piece::operator= (const Piece& p)
 }
 */
 
-vector<Piece> Piece::generatePieces(const SIDE_t side, const Uint8 pieces=5)
+vector<Piece> Piece::generatePieces(const SIDE_t side, const Uint8 pieces)
 {
   vector<Piece> rtrn;
   for(Uint8 i = 0; i < pieces; i++)

@@ -2,7 +2,7 @@
 
 void display(const Board &b, AI &myAI)
 {
-#if DEBUG
+#ifdef DEBUG
   Piece *temp;
   const char * const merp = b.toString();
   cout<<endl<<endl<<"  0 1 2 3 4 5 6 7 8 9"<<endl<<endl;  
@@ -64,16 +64,16 @@ const Uint8 retrievePiece(const Uint8 nPieces)
 void playIns(Board &b, const SIDE_t s, AI &myAI)
 {
   Piece * next;
-  ABNode n;
+  Move n;
   while(next = b.nextIn(s))
   {
     display(b, myAI);
     cout<<endl<<"Player "<<int(s)<<": Play in piece "<<int(next->getStrength())<<endl;
     if(s == myAI.getSide())
     {
-      if(next == (n = myAI.getBestMove(4)).p)
+      if(next == (n = myAI.getBestMove(5)).getPiece())
       {
-	b.playIn(next, n.c);
+	b.playIn(next, n.getCell());
       }
     }
     else
@@ -86,12 +86,31 @@ void playIns(Board &b, const SIDE_t s, AI &myAI)
 int main(void)
 {
   Piece * winner;
-  Board b(Dimensions(10.0, 10.0), 2, 5);
-  AI myAI(&b, 0);
-  AI myAI2(&b, 1);
+  vector<Piece> * startPieces = new vector<Piece> [2];
+  Cell * startCells = Cell::generateDefaultCells(Dimensions(10.0, 10.0));
+  startPieces[0] = Piece::generatePieces(0);
+  startPieces[1] = Piece::generatePieces(1);
+  
+  startPieces[1][0].setCell(startCells + 55);
+  startPieces[1][1].setCell(startCells + 86);
+  startPieces[1][2].setCell(startCells + 29);
+  startPieces[1][3].setCell(startCells + 88);
+  startPieces[1][4].setCell(startCells + 92);
+  startPieces[0][0].setCell(startCells + 15);
+  startPieces[0][1].setCell(startCells + 10);
+  startPieces[0][2].setCell(startCells + 56);
+  startPieces[0][3].setCell(startCells + 0);
+  startPieces[0][4].setCell(startCells + 28);
+  
+  Board b(Dimensions(10.0, 10.0), 2, 5, startCells, startPieces, 1);
+  startPieces[1][2].hasFlag(0);
+  b.setFlag(&startPieces[1][2]);
+  
+  AI myAI(&b, 0), myAI2(&b, 1);
 //   for(SIDE_t s = 0; s < b.getSides(); s++)
 //     playIns(b, s);  //lol
   
+  /*
   b.playIn(b.getPiece(1, 0), b.getCell(Point(4, 0)));
   b.playIn(b.getPiece(1, 1), b.getCell(Point(5, 9)));
   b.playIn(b.getPiece(2, 0), b.getCell(Point(8, 0)));
@@ -102,6 +121,7 @@ int main(void)
   b.playIn(b.getPiece(4, 1), b.getCell(Point(9, 9)));
   b.playIn(b.getPiece(5, 0), b.getCell(Point(6, 0)));
   b.playIn(b.getPiece(5, 1), b.getCell(Point(3, 9)));
+  */
   
   while(!(winner = b.won()))
   {
@@ -117,15 +137,20 @@ int main(void)
       cout<<"Move Player "<<int(b.whosTurn())<<endl;
       if(b.whosTurn() == myAI.getSide())
       {
-	ABNode n = myAI.getBestMove(4);
-	p = n.p;
-	c = n.c;
+	Move n(myAI.getBestMove(5));
+	p = n.getPiece();
+	c = n.getCell();
       }
       else
       {
-        ABNode n = myAI2.getBestMove(4);
-	p = n.p;
-	c = n.c;
+	/*
+	p = b.getPiece(retrievePiece(5), 1);
+	c = b.getCell(retrievePoint(b.getDim()));
+	*/
+	Move n(myAI2.getBestMove(5));
+	p = n.getPiece();
+	c = n.getCell();
+	
       }
       
       
@@ -134,4 +159,5 @@ int main(void)
   
   display(b, myAI);
   cout<<endl<<"Player "<<int(b.won()->getSide())<<" capped"<<endl;
+  return 0;
 }

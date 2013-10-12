@@ -1,4 +1,5 @@
 #include "AI.h"
+#include "boardTree.h"
 
 const EXPECTED_VALUE AI::evaluate(const Board &b)
 {
@@ -62,12 +63,12 @@ const EXPECTED_VALUE AI::evaluate(const Board &b)
   return ourSide - sum_a_ther_side/(b.getSides()-1);
 }
 
-
-const EXPECTED_VALUE AI::findBestMove(Node &n)
+/*
+const EXPECTED_VALUE AI::findBestMove(BoardNode &n)
 {
   EXPECTED_VALUE evaluation = evaluate(n.b);
   
-#if DEBUG
+#ifdef DEBUG
   const char * const merp = n.b.toString();
   cout<<endl<<endl<<"  0 1 2 3 4 5 6 7 8 9"<<endl<<endl;  
   for(Uint8 y = 0; y < n.b.getDim().y(); y++)
@@ -132,7 +133,6 @@ const EXPECTED_VALUE AI::findBestMove(Node &n)
         else
 	  children.push_back((children.size()/rtrn));
       }
-      */
     }
   }
   
@@ -148,17 +148,17 @@ const EXPECTED_VALUE AI::findBestMove(Node &n)
   return sum/children.size();
 }
 
-const ABNode AI::getBestMove(const Uint8 depth)
+*/
+
+const Move AI::getBestMove(const int depth)
 {
-  ABNode rtrn = {*board, depth, NULL, NULL, -100000000, 100000000};
   //Node rtrn = {*board, depth, NULL, NULL, quiEvaluate(*board)};
-  rtrn.alpha = alphaBeta(rtrn);
-  //rtrn.prev = findBestMove(rtrn);
-  rtrn.p = board->getPiece(rtrn.p->getValue(), rtrn.p->getSide());
-  rtrn.c = board->getCell(rtrn.b.getPoint(rtrn.c));
-  return rtrn;  
+  Board temp(*game);
+  Move rtrn(alphaBeta(temp, -10000000.0, 10000000.0, depth).bestMove, game);
+  return rtrn;
 }
 
+/*
 const EXPECTED_VALUE AI::quiesce(ABNode &n)
 {
   EXPECTED_VALUE standPat = -quiEvaluate(n.b), score;
@@ -235,85 +235,97 @@ const EXPECTED_VALUE AI::quiesce(ABNode &n)
   
   return n.alpha;
 }
+*/
 
-const EXPECTED_VALUE AI::alphaBeta(ABNode &n)
+
+const SEARCH_RETURN AI::alphaBeta(Board& board, EXPECTED_VALUE alpha, EXPECTED_VALUE beta, int depth)
 {
-
-#if DEBUG
-  const char * const merp = n.b.toString();
+#ifdef DEBUG
+  const char * const merp = board.toString();
   cout<<endl<<endl;
-  for(Uint8 space = 6 - n.depth; space > 0; space--)
+  for(Uint8 space = 6 - depth; space > 0; space--)
     cout<<' ';
   cout<<"  0 1 2 3 4 5 6 7 8 9"<<endl<<endl;  
-  for(Uint8 y = 0; y < n.b.getDim().y(); y++)
+  for(Uint8 y = 0; y < board.getDim().y(); y++)
   {
-    for(Uint8 space = 6 - n.depth; space > 0; space--)
+    for(Uint8 space = 6 - depth; space > 0; space--)
       cout<<' ';
     cout<<char('A'+y)<<' '<<(merp + y*20)<<endl;
   }
-  for(Uint8 space = 6 - n.depth; space > 0; space--)
+  for(Uint8 space = 6 - depth; space > 0; space--)
     cout<<' ';
-  cout<<"Value for current game: "<<evaluate(n.b)<<endl;
+  cout<<"Value for current game: "<<evaluate(board)<<endl;
 #endif
   
-  if(n.depth == 0 || n.b.won() != NULL)
+  if(depth == 0 || board.won() != NULL)
   {
-    return quiEvaluate(n.b) - n.depth;
+    return SEARCH_RETURN(quiEvaluate(board) - depth, Move(NULL, NULL, NULL));
     //return quiesce(n);
   }
   
   EXPECTED_VALUE score, bestScore = -10000000;
+  Move ret(NULL, NULL, NULL);
   
-  ABNode next {n.b, n.depth, NULL, NULL, n.b.nextIn(n.b.whosTurn())==NULL? -n.beta:n.alpha, n.b.nextIn(n.b.whosTurn())==NULL? -n.alpha:n.beta};
+  //BoardNode next {n.b, n.depth, NULL, NULL, n.b.nextIn(n.b.whosTurn())==NULL? -n.beta:n.alpha, n.b.nextIn(n.b.whosTurn())==NULL? -n.alpha:n.beta};
+  vector<Piece> &pieces = board.getPieceList(board.whosTurn());
   
-  vector<Piece> &pieces = n.b.getPieceList(next.b.whosTurn());
+  Move next(NULL, NULL, &board);
+  
   for(auto i = pieces.begin(); i != pieces.end(); i++)
   {
-    if(next.p = n.b.nextIn(n.b.whosTurn()))
+    if(next.setPiece(board.nextIn(board.whosTurn())))
     {
-      if(next.p != &*i)
+      if(next.getPiece() != &*i)
         continue;
     }
-    auto validLocations = n.b.getValid(&*i);
+    auto validLocations = board.getValid(&*i);
     for(auto c = validLocations.begin(); c != validLocations.end(); c++)
     {
-      next.b = n.b;
-      next.p = next.b.getPiece(i->getValue(), i->getSide());
-      next.c = next.b.getCell(n.b.getPoint(*c));
-      next.alpha = n.b.nextIn(n.b.whosTurn())==NULL? -n.beta:n.alpha;
-      next.beta = n.b.nextIn(n.b.whosTurn())==NULL? -n.alpha:n.beta;
-      next.depth = n.depth - 1;
-      if(next.b.nextIn(next.b.whosTurn()))
+      next.setPiece(&*i);
+      next.setCell(*c);
+      if(!next.doMove())
+	continue;
+      if(board.nextIn(board.whosTurn()))
       {
-	if(next.b.playIn(next.p, next.c))
-	  continue;
-	score = alphaBeta(next);
-	next.depth = n.depth;
+	score = alphaBeta(board, alpha, beta, depth-1).val;
       }
       else
       {
-	if(!next.b.move(next.p, next.c))
-	  continue;
-	score = -alphaBeta(next);
+	score = -alphaBeta(board, -beta, -alpha, depth-1).val;
       }
       
-      //next.depth = n.depth - 1;
+      next.undoMove();
       
+      #ifdef DEBUG
+  const char * const merp = board.toString();
+  cout<<endl<<endl;
+  for(Uint8 space = 6 - depth; space > 0; space--)
+    cout<<' ';
+  cout<<"  0 1 2 3 4 5 6 7 8 9"<<endl<<endl;  
+  for(Uint8 y = 0; y < board.getDim().y(); y++)
+  {
+    for(Uint8 space = 6 - depth; space > 0; space--)
+      cout<<' ';
+    cout<<char('A'+y)<<' '<<(merp + y*20)<<endl;
+  }
+  for(Uint8 space = 6 - depth; space > 0; space--)
+    cout<<' ';
+  cout<<"Value for current game: "<<evaluate(board)<<endl;
+#endif
       
-      if(score >= n.beta)
-	return n.beta;
+      if(score >= beta)
+	return SEARCH_RETURN(beta, next);
       
       if(score > bestScore)
       {
 	bestScore = score;
-	if(score > n.alpha)
-	  n.alpha = -(next.beta = -score);
-	n.p = &*i;
-	n.c = *c;
+	if(score > alpha)
+	  alpha = score;
+	ret = next;
       }
       
     }
   }
   
-  return bestScore;
+  return SEARCH_RETURN(bestScore, ret);
 }

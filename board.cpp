@@ -2,7 +2,9 @@
 
 const char * const Board::toString() const
 {
-#if DEBUG
+  if(cells == NULL || pieces == NULL || flags == NULL)
+    return NULL;
+#ifdef DEBUG
   for(Uint8 y = 0; y < 10; y++)
   {
     for(Uint8 x = 0; x < 10; x++)
@@ -19,7 +21,7 @@ const char * const Board::toString() const
 
 const bool Board::move(Piece * const src, Cell * const dest)
 {
-  if(!src || !dest || !src->getCell() || !cellHere(dest))
+  if(!src || !dest || !src->getCell() || !cellHere(dest) || !cellHere(src==NULL? NULL:src->getCell()))
     return false;
   
   
@@ -89,9 +91,44 @@ const bool Board::move(Piece * const src, Cell * const dest)
   return true;
 }
 
+const bool Board::unMove(Piece * const src, Cell * const dest)
+{
+  winner = NULL;
+  if(dest == NULL)
+  {
+    for(auto o = out.begin(); o != out.end(); o++)
+    {
+      (*o)->setOut((*o)->getOut() + 1);
+    }
+    ejectPiece(src, 0);
+  }
+  else if(src->getCell() == NULL)
+  {
+    src->setCell(dest);
+    src->setOut(0);
+    out.erase(remove(out.begin(), out.end(), src), out.end());
+  }
+  else
+  {
+    for(auto o = out.begin(); o != out.end(); o++)
+    {
+      (*o)->setOut((*o)->getOut() + 1);
+    }
+    src->setCell(dest);
+    if(src->hasFlag() >= 0)
+    {
+      flags[src->hasFlag()] = NULL;
+      src->hasFlag(-1);
+    }
+    turn-=1;
+  }
+  
+  return true;
+}
+
 const bool Board::canAttack(Piece * const p, Cell * const c) const
 {
-  if(p == NULL || c == NULL || !cellHere(c))
+  if(p == NULL || c == NULL || !cellHere(c) || !cellHere(p==NULL? NULL:p->getCell()))
     return false;
   
   if(c->getPiece() == NULL)
@@ -114,7 +151,7 @@ const bool Board::canAttack(Piece * const p, Cell * const c) const
 
 const bool Board::canHandOff(Piece * const p, Cell * const c) const
 {
-  if(p == NULL || c == NULL || !cellHere(c))
+  if(p == NULL || c == NULL || !cellHere(c) || !cellHere(p==NULL? NULL:p->getCell()))
     return false;
   
   if(c->getPiece() == NULL)
@@ -158,6 +195,8 @@ Piece * const Board::playIn(Piece * const p=NULL, Cell * const loc=NULL)
 
 Piece * const Board::nextIn(const SIDE_t s) const
 {
+  if(cells == NULL)
+    return NULL;
   auto rtrn = find_if(out.begin(), out.end(), [s](Piece *p) {
     return !p->getOut() && p->getSide()==s;
   });
@@ -171,6 +210,10 @@ Piece * const Board::nextIn(const SIDE_t s) const
 
 const bool Board::handOff(Piece * const p1, Piece * const p2)
 {
+  if(cells == NULL || p1 == NULL || p2 == NULL)
+    return false;
+  if(!cellHere(p1->getCell()))
+    return false;
   Point rel = getPoint(p1->getCell()) - getPoint(p1->getCell());
   if(p1->hasFlag() < 0)
     return false;
@@ -197,7 +240,7 @@ const bool Board::handOff(Piece * const p1, Piece * const p2)
 
 int Board::ejectPiece(Piece * const p, const Uint8 o)
 {
-  if(p == NULL)
+  if(p == NULL || cells == NULL)
     return -1;
   p->setOut(o);
   out.push_back(p);
@@ -234,7 +277,7 @@ int Board::ejectPiece(Piece * const p, const Uint8 o)
 
 Cell * const Board::getCell(const Point &p) const
 {
-  if(p.x() < -0.5 || p.y() < -0.5 || p.x() > dimensions.x() - 0.5 || p.y() > dimensions.y() - 0.5)
+  if(cells == NULL || p.x() < -0.5 || p.y() < -0.5 || p.x() > dimensions.x() - 0.5 || p.y() > dimensions.y() - 0.5)
     return NULL;
   
   return cells + ((int)((dimensions.x().val*p.y().val) + p.x().val));
@@ -247,7 +290,7 @@ Cell * const Board::getCell(Piece * const p) const
 
 const Point Board::getPoint(Cell * const c) const
 {
-  if(c - cells < 0 || c - cells > int(dimensions.x().val * dimensions.y().val))
+  if(!cellHere(c) || c - cells < 0 || c - cells > int(dimensions.x().val * dimensions.y().val))
     return Point(-1.0, -1.0);
   
   return Point((c - cells)%int(dimensions.x()), (c - cells) / int(dimensions.x()));
@@ -255,7 +298,7 @@ const Point Board::getPoint(Cell * const c) const
 
 const vector<Cell *> Board::getValid(Piece * const p) const
 {
-  if(p == NULL)
+  if(p == NULL || cells == NULL)
     return vector<Cell *>(1, NULL);
   else if(p->getOut() == 0 && p->getCell() == NULL)
   {
@@ -295,6 +338,35 @@ const vector<Cell *> Board::getValid(Cell * const c) const
     return vector<Cell *>(1, NULL);
   return getValid(c->getPiece());
 }
+
+const bool Board::setFlag(Piece * const p)
+{
+  if(p == NULL)
+    return false;
+  
+  if(!cellHere(p->getCell()))
+    return false;
+  
+  if(p->hasFlag() >= 0 && p->hasFlag() < sides)
+  {
+    flags[p->hasFlag()] = p;
+    return true;
+  }
+  else if(p->hasFlag() == -1)
+  {
+    for(Uint8 i = 0; i < sides; i++)
+    {
+      if(flags[i] == p)
+	flags[i] = NULL;
+    }
+    
+    return true;
+  }
+  
+  return false;
+}
+
+
 
 Board::Board(const Board& other): 
 dimensions(other.dimensions), sides(other.sides), nPieces(other.nPieces), turn(other.turn), winner(other.winner)
@@ -346,11 +418,13 @@ Board &Board::operator= (Board other)
 }
 
 Board::Board(const Dimensions d, const SIDE_t nSides, 
-	     const Uint8 nP, Cell * const c, vector<Piece> * const p):
-	     dimensions(d), sides(nSides), nPieces(nP), cells(c), pieces(p), winner(NULL), turn(0)
+	     const Uint8 nP, Cell * const c, vector<Piece> * const p, const bool first):
+	     dimensions(d), sides(nSides), nPieces(nP), cells(c), pieces(p), winner(NULL), turn(first? 1:0)
 {
   if(cells == NULL && nSides == 2)
+  {
     cells = Cell::generateDefaultCells(dimensions);
+  }
   
   if(cells == NULL)
     return;
@@ -364,26 +438,30 @@ Board::Board(const Dimensions d, const SIDE_t nSides,
     {
       pieces[s] = Piece::generatePieces(s, nPieces);
     }
+    
+    for(Uint8 i = 0; i < sides; i++)
+    {
+      for(auto j = pieces[i].begin(); j != pieces[i].end(); j++)
+      {
+        out.push_back(&*j);
+      }
+    }
+  
   }
   
   flags = new Piece * [sides];
   for(Uint8 i = 0; i < sides; i++)
     flags[i] = NULL;
   
-  for(Uint8 i = 0; i < sides; i++)
-  {
-    for(auto j = pieces[i].begin(); j != pieces[i].end(); j++)
-    {
-      out.push_back(&*j);
-    }
-  }
-  
   toString();
 }
 
 Board::~Board()
 {
-  delete [] cells;
-  delete [] pieces;
-  delete [] flags;
+  if(cells)
+    delete [] cells;
+  if(pieces)
+    delete [] pieces;
+  if(flags)
+    delete [] flags;
 }
