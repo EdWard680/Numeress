@@ -10,7 +10,7 @@
 #include "GameControl/GameLoop.h"
 #include "Space2D/Velocity.h"
 
-#define DEBUG
+//#define DEBUG
 
 using namespace std;
 using namespace Space2D;

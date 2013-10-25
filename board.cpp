@@ -12,7 +12,7 @@ const char * const Board::toString() const
       boardString[y][x*2] = (cells[y*10 + x].getPiece() == NULL? '-':('0' + cells[y*10 + x].getPiece()->getStrength()));
       boardString[y][x*2 + 1] = ' ';
     }
-    boardString[y][19] = NULL;
+    boardString[y][19] = '\n';
   }
   return &boardString[0][0];
 #endif
@@ -114,12 +114,12 @@ const bool Board::unMove(Piece * const src, Cell * const dest)
     {
       (*o)->setOut((*o)->getOut() + 1);
     }
-    src->setCell(dest);
-    if(src->hasFlag() >= 0)
+    if(src->hasFlag() >= 0/* && src->getCell()->getType() == Cell::CAP_ZONE && src->getCell()->getSide() != src->getSide()*/)
     {
       flags[src->hasFlag()] = NULL;
       src->hasFlag(-1);
     }
+    src->setCell(dest);
     turn-=1;
   }
   
@@ -349,6 +349,8 @@ const bool Board::setFlag(Piece * const p)
   
   if(p->hasFlag() >= 0 && p->hasFlag() < sides)
   {
+    if(flags[p->hasFlag()] != NULL)
+      flags[p->hasFlag()]->hasFlag(-1);
     flags[p->hasFlag()] = p;
     return true;
   }

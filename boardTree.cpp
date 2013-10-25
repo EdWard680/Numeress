@@ -26,7 +26,8 @@ const bool Move::doMove() const
   bool ret;
   Cell * const orig = p->getCell();
   victim = c->getPiece();
-  hadFlag = victim? victim->hasFlag():p->hasFlag();
+  pFlag = p->hasFlag();
+  vicFlag = victim? victim->hasFlag():-2;
   
   if(p == b->nextIn(p->getSide()))
   {
@@ -50,16 +51,20 @@ const bool Move::undoMove() const
   
   Cell * const orig = p->getCell();
   
+  
+  
   bool ret = b->unMove(p, c);
   if(victim != NULL)
   {
     ret = b->unMove(victim, orig);
-    victim->hasFlag(hadFlag);
+    victim->hasFlag(vicFlag);
     b->setFlag(victim);
+    p->hasFlag(pFlag);
+    b->setFlag(p);
   }
   else
   {
-    p->hasFlag(hadFlag);
+    p->hasFlag(pFlag);
     b->setFlag(p);
   }
   c = orig;

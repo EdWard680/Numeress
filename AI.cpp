@@ -241,7 +241,7 @@ const EXPECTED_VALUE AI::quiesce(ABNode &n)
 const SEARCH_RETURN AI::alphaBeta(Board& board, EXPECTED_VALUE alpha, EXPECTED_VALUE beta, int depth)
 {
 #ifdef DEBUG
-  const char * const merp = board.toString();
+  string merp(board.toString());
   cout<<endl<<endl;
   for(Uint8 space = 6 - depth; space > 0; space--)
     cout<<' ';
@@ -250,7 +250,12 @@ const SEARCH_RETURN AI::alphaBeta(Board& board, EXPECTED_VALUE alpha, EXPECTED_V
   {
     for(Uint8 space = 6 - depth; space > 0; space--)
       cout<<' ';
-    cout<<char('A'+y)<<' '<<(merp + y*20)<<endl;
+    cout<<char('A'+y)<<' ';
+    for(Uint8 x=0; merp[y*20+x] != '\n'; x++)
+    {
+      cout<<merp[y*20+x];
+    }
+    cout<<endl;
   }
   for(Uint8 space = 6 - depth; space > 0; space--)
     cout<<' ';
@@ -296,9 +301,33 @@ const SEARCH_RETURN AI::alphaBeta(Board& board, EXPECTED_VALUE alpha, EXPECTED_V
       
       next.undoMove();
       
-      #ifdef DEBUG
-  const char * const merp = board.toString();
-  cout<<endl<<endl;
+#ifdef DEBUG
+  if(merp != string(board.toString()))
+  {
+    for(Uint8 fucksGiven = 99; fucksGiven > 0; fucksGiven--)
+      cout<<"YOU FUCKED UP! ";
+    cout<<endl<<"I guess you really don't give a fuck"<<endl;
+    merp = board.toString();
+    for(Uint8 space = 6 - depth; space > 0; space--)
+      cout<<' ';
+    cout<<"  0 1 2 3 4 5 6 7 8 9"<<endl<<endl;  
+    for(Uint8 y = 0; y < board.getDim().y(); y++)
+    {
+      for(Uint8 space = 6 - depth; space > 0; space--)
+        cout<<' ';
+      cout<<char('A'+y)<<' ';
+      for(Uint8 x=0; merp[y*20+x] != '\n'; x++)
+      {
+        cout<<merp[y*20+x];
+      }
+      cout<<endl;
+    }
+    for(Uint8 space = 6 - depth; space > 0; space--)
+      cout<<' ';
+    cout<<"Value for current game: "<<evaluate(board)<<endl;
+    while(getchar() != '\n');
+  }
+  
   for(Uint8 space = 6 - depth; space > 0; space--)
     cout<<' ';
   cout<<"  0 1 2 3 4 5 6 7 8 9"<<endl<<endl;  
@@ -306,7 +335,12 @@ const SEARCH_RETURN AI::alphaBeta(Board& board, EXPECTED_VALUE alpha, EXPECTED_V
   {
     for(Uint8 space = 6 - depth; space > 0; space--)
       cout<<' ';
-    cout<<char('A'+y)<<' '<<(merp + y*20)<<endl;
+    cout<<char('A'+y)<<' ';
+    for(Uint8 x=0; merp[y*20+x] != '\n'; x++)
+    {
+      cout<<merp[y*20+x];
+    }
+    cout<<endl;
   }
   for(Uint8 space = 6 - depth; space > 0; space--)
     cout<<' ';

@@ -19,7 +19,8 @@ class Move
   mutable Piece *p;
   mutable Cell *c;
   mutable Piece *victim;
-  mutable int hadFlag;
+  mutable short pFlag;
+  mutable short vicFlag;
   
 public:
   Piece * const getPiece() const {return p;};
@@ -43,8 +44,8 @@ public:
   const bool operator== (const Move& other) const {return p==other.p && c==other.c;};
   const bool operator!= (const Move& other) const {return !(*this == other);};
   
-  Move(Piece *pInit=NULL, Cell *cInit=NULL, Board *bInit=NULL): p(pInit), victim(NULL), hadFlag(-1), c(cInit), b(bInit) {};
-  Move(const Move& other): p(other.p), c(other.c), b(other.b), victim(NULL), hadFlag(-1) {};
+  Move(Piece *pInit=NULL, Cell *cInit=NULL, Board *bInit=NULL): p(pInit), victim(NULL), pFlag(-1), vicFlag(-1), c(cInit), b(bInit) {};
+  Move(const Move& other): p(other.p), c(other.c), b(other.b), victim(NULL), pFlag(-1), vicFlag(-1) {};
   Move(const Move& other, Board * const bInit): Move((bInit? other.getPiece(*bInit):NULL), (bInit? other.getCell(*bInit):NULL), bInit) {};
 };
 
